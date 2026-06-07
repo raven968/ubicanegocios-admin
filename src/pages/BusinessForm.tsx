@@ -1,0 +1,374 @@
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import api from '../lib/api'
+import type { Business, Category } from '../lib/types'
+
+interface FormState {
+  name: string
+  description: string
+  address: string
+  phone: string
+  email: string
+  video_url: string
+  video_orientation: 'horizontal' | 'vertical'
+  tags: string
+  active: boolean
+  category_ids: number[]
+  subcategory_ids: number[]
+}
+
+const empty: FormState = {
+  name: '',
+  description: '',
+  address: '',
+  phone: '',
+  email: '',
+  video_url: '',
+  video_orientation: 'horizontal',
+  tags: '',
+  active: true,
+  category_ids: [],
+  subcategory_ids: [],
+}
+
+export default function BusinessForm() {
+  const { id } = useParams()
+  const isEdit = Boolean(id)
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [form, setForm] = useState<FormState>(empty)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const categories = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => (await api.get<{ data: Category[] }>('/categories')).data.data,
+  })
+
+  const business = useQuery({
+    queryKey: ['business', id],
+    enabled: isEdit,
+    queryFn: async () => (await api.get<{ data: Business }>(`/admin/businesses/${id}`)).data.data,
+  })
+
+  useEffect(() => {
+    if (business.data) {
+      const b = business.data
+      setForm({
+        name: b.name,
+        description: b.description ?? '',
+        address: b.address ?? '',
+        phone: b.phone ?? '',
+        email: b.email ?? '',
+        video_url: b.video_url ?? '',
+        video_orientation: b.video_orientation ?? 'horizontal',
+        tags: (b.tags ?? []).join(', '),
+        active: b.active,
+        category_ids: b.categories.map((c) => c.id),
+        subcategory_ids: b.subcategories.map((s) => s.id),
+      })
+    }
+  }, [business.data])
+
+  const availableSubcategories = (categories.data ?? [])
+    .filter((c) => form.category_ids.includes(c.id))
+    .flatMap((c) => c.subcategories ?? [])
+
+  const toggle = (key: 'category_ids' | 'subcategory_ids', value: number) => {
+    setForm((f) => ({
+      ...f,
+      [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value],
+    }))
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSaving(true)
+    const payload = {
+      name: form.name,
+      description: form.description || null,
+      address: form.address || null,
+      phone: form.phone || null,
+      email: form.email || null,
+      video_url: form.video_url || null,
+      video_orientation: form.video_orientation,
+      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      active: form.active,
+      category_ids: form.category_ids,
+      subcategory_ids: form.subcategory_ids,
+    }
+    try {
+      if (isEdit) {
+        await api.put(`/admin/businesses/${id}`, payload)
+      } else {
+        const res = await api.post<{ data: Business }>('/admin/businesses', payload)
+        qc.invalidateQueries({ queryKey: ['businesses'] })
+        navigate(`/negocios/${res.data.data.id}`, { replace: true })
+        return
+      }
+      qc.invalidateQueries({ queryKey: ['businesses'] })
+      qc.invalidateQueries({ queryKey: ['business', id] })
+    } catch {
+      setError('No se pudo guardar. Revisa los campos.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">
+        {isEdit ? 'Editar negocio' : 'Nuevo negocio'}
+      </h1>
+
+      {error && (
+        <div className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-5 rounded-xl border border-gray-200 bg-white p-6">
+        <Field label="Nombre">
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="input"
+            required
+          />
+        </Field>
+
+        <Field label="Descripción">
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={4}
+            className="input"
+          />
+        </Field>
+
+        <Field label="Dirección">
+          <input
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+            placeholder="Calle, número, colonia, ciudad, estado"
+            className="input"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Se usa también para el mapa de Google en la ficha pública.
+          </p>
+        </Field>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Teléfono">
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="+52 33 1234 5678"
+              className="input"
+            />
+          </Field>
+          <Field label="Correo">
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="contacto@negocio.mx"
+              className="input"
+            />
+          </Field>
+        </div>
+
+        <Field label="URL de video (YouTube)">
+          <input
+            value={form.video_url}
+            onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+            placeholder="https://www.youtube.com/watch?v=…"
+            className="input"
+          />
+          <div className="mt-2 flex gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="video_orientation"
+                value="horizontal"
+                checked={form.video_orientation === 'horizontal'}
+                onChange={() => setForm({ ...form, video_orientation: 'horizontal' })}
+              />
+              <span className="text-gray-700">Horizontal (16:9)</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="video_orientation"
+                value="vertical"
+                checked={form.video_orientation === 'vertical'}
+                onChange={() => setForm({ ...form, video_orientation: 'vertical' })}
+              />
+              <span className="text-gray-700">Vertical / Short (9:16)</span>
+            </label>
+          </div>
+        </Field>
+
+        <Field label="Tags (separados por coma)">
+          <input
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+            placeholder="tacos, comida, pastor"
+            className="input"
+          />
+        </Field>
+
+        <Field label="Categorías">
+          <div className="flex flex-wrap gap-2">
+            {categories.data?.map((c) => (
+              <Chip
+                key={c.id}
+                active={form.category_ids.includes(c.id)}
+                onClick={() => toggle('category_ids', c.id)}
+              >
+                {c.name}
+              </Chip>
+            ))}
+          </div>
+        </Field>
+
+        {availableSubcategories.length > 0 && (
+          <Field label="Subcategorías">
+            <div className="flex flex-wrap gap-2">
+              {availableSubcategories.map((s) => (
+                <Chip
+                  key={s.id}
+                  active={form.subcategory_ids.includes(s.id)}
+                  onClick={() => toggle('subcategory_ids', s.id)}
+                >
+                  {s.name}
+                </Chip>
+              ))}
+            </div>
+          </Field>
+        )}
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.active}
+            onChange={(e) => setForm({ ...form, active: e.target.checked })}
+          />
+          <span className="font-medium text-gray-700">Activo (visible en la web)</span>
+        </label>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/negocios')}
+            className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+
+      {isEdit && business.data && <ImageManager business={business.data} />}
+
+      <style>{`.input{width:100%;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.5rem 0.75rem;font-size:0.875rem}.input:focus{outline:none;border-color:#10b981}`}</style>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block font-medium text-gray-700">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+        active
+          ? 'border-emerald-600 bg-emerald-600 text-white'
+          : 'border-gray-300 bg-white text-gray-600 hover:border-emerald-400'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function ImageManager({ business }: { business: Business }) {
+  const qc = useQueryClient()
+  const [uploading, setUploading] = useState(false)
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ['business', String(business.id)] })
+
+  const onUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    const fd = new FormData()
+    Array.from(files).forEach((f) => fd.append('images[]', f))
+    try {
+      await api.post(`/admin/businesses/${business.id}/images`, fd)
+      refresh()
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const onDelete = async (imageId: number) => {
+    await api.delete(`/admin/images/${imageId}`)
+    refresh()
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+      <h2 className="mb-4 text-lg font-semibold text-gray-800">Imágenes</h2>
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {business.images.map((img) => (
+          <div key={img.id} className="group relative overflow-hidden rounded-lg border border-gray-200">
+            <img src={img.url} alt="" className="h-28 w-full object-cover" />
+            <button
+              onClick={() => onDelete(img.id)}
+              className="absolute right-1 top-1 rounded bg-red-600/90 px-2 py-0.5 text-xs text-white opacity-0 transition group-hover:opacity-100"
+            >
+              Borrar
+            </button>
+          </div>
+        ))}
+        {business.images.length === 0 && (
+          <p className="col-span-full text-sm text-gray-400">Aún no hay imágenes.</p>
+        )}
+      </div>
+      <label className="inline-block cursor-pointer rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-emerald-400">
+        {uploading ? 'Subiendo…' : '+ Subir imágenes'}
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => onUpload(e.target.files)}
+        />
+      </label>
+    </div>
+  )
+}
