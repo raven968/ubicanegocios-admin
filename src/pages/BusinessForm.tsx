@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
-import type { Business, Category } from '../lib/types'
+import { PLANS, type Business, type Category, type PlanSlug } from '../lib/types'
 
 interface FormState {
   name: string
@@ -14,6 +14,7 @@ interface FormState {
   video_orientation: 'horizontal' | 'vertical'
   tags: string
   active: boolean
+  plan: PlanSlug | ''
   category_ids: number[]
   subcategory_ids: number[]
 }
@@ -28,6 +29,7 @@ const empty: FormState = {
   video_orientation: 'horizontal',
   tags: '',
   active: true,
+  plan: '',
   category_ids: [],
   subcategory_ids: [],
 }
@@ -65,6 +67,7 @@ export default function BusinessForm() {
         video_orientation: b.video_orientation ?? 'horizontal',
         tags: (b.tags ?? []).join(', '),
         active: b.active,
+        plan: b.plan ?? '',
         category_ids: b.categories.map((c) => c.id),
         subcategory_ids: b.subcategories.map((s) => s.id),
       })
@@ -96,6 +99,7 @@ export default function BusinessForm() {
       video_orientation: form.video_orientation,
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       active: form.active,
+      plan: form.plan || null,
       category_ids: form.category_ids,
       subcategory_ids: form.subcategory_ids,
     }
@@ -248,6 +252,28 @@ export default function BusinessForm() {
             </div>
           </Field>
         )}
+
+        <Field label="Plan">
+          <div className="flex items-center gap-3">
+            <select
+              value={form.plan}
+              onChange={(e) => setForm({ ...form, plan: e.target.value as PlanSlug | '' })}
+              className="input"
+            >
+              <option value="">— Sin plan —</option>
+              {PLANS.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
+            </select>
+            {form.plan && (
+              <img
+                src={PLANS.find((p) => p.slug === form.plan)?.image}
+                alt=""
+                className="h-12 w-12 shrink-0 object-contain"
+              />
+            )}
+          </div>
+        </Field>
 
         <label className="flex items-center gap-2 text-sm">
           <input

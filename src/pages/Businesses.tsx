@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
-import type { Business, Paginated } from '../lib/types'
+import { PLANS, type Business, type Paginated } from '../lib/types'
 
 export default function Businesses() {
   const qc = useQueryClient()
@@ -44,6 +44,7 @@ export default function Businesses() {
             <tr>
               <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">Categorías</th>
+              <th className="px-4 py-3">Plan</th>
               <th className="px-4 py-3">Reseñas</th>
               <th className="px-4 py-3">Estado</th>
               <th className="px-4 py-3"></th>
@@ -52,7 +53,7 @@ export default function Businesses() {
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   Cargando…
                 </td>
               </tr>
@@ -62,6 +63,19 @@ export default function Businesses() {
                 <td className="px-4 py-3 font-medium text-gray-900">{b.name}</td>
                 <td className="px-4 py-3 text-gray-600">
                   {b.categories.map((c) => c.name).join(', ') || '—'}
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {(() => {
+                    const p = PLANS.find((pp) => pp.slug === b.plan)
+                    return p ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <img src={p.image} alt="" className="h-6 w-6 object-contain" />
+                        <span className="text-xs text-gray-700">{p.name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )
+                  })()}
                 </td>
                 <td className="px-4 py-3 text-gray-600">
                   {b.reviews_count} {b.reviews_count > 0 && `(${b.average_rating}★)`}
@@ -92,7 +106,7 @@ export default function Businesses() {
             ))}
             {data?.data.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   Sin negocios.
                 </td>
               </tr>
