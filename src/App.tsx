@@ -8,6 +8,7 @@ import Businesses from './pages/Businesses'
 import BusinessForm from './pages/BusinessForm'
 import Categories from './pages/Categories'
 import Reviews from './pages/Reviews'
+import Users from './pages/Users'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/negocios/:id" element={<BusinessForm />} />
         <Route path="/categorias" element={<Categories />} />
         <Route path="/resenas" element={<Reviews />} />
+        <Route path="/usuarios" element={<Users />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
