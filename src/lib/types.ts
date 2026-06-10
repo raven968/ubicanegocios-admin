@@ -54,6 +54,11 @@ export interface Business {
   address: string | null
   phone: string | null
   email: string | null
+  facebook: string | null
+  instagram: string | null
+  tiktok: string | null
+  pinterest: string | null
+  website: string | null
   tags: string[]
   active: boolean
   plan: PlanSlug | null
