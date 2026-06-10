@@ -1,4 +1,4 @@
-export type PlanSlug = 'estrella' | 'pro' | 'destaca' | 'emprende' | 'lite'
+export type PlanSlug = 'fundador' | 'estrella' | 'pro' | 'destaca' | 'emprende' | 'lite'
 
 export interface PlanInfo {
   slug: PlanSlug
@@ -7,6 +7,7 @@ export interface PlanInfo {
 }
 
 export const PLANS: PlanInfo[] = [
+  { slug: 'fundador', name: 'Negocio Fundador', image: '/planes/fundador.png' },
   { slug: 'estrella', name: 'Negocio Estrella', image: '/planes/estrella.png' },
   { slug: 'pro', name: 'Ubica Pro', image: '/planes/pro.png' },
   { slug: 'destaca', name: 'Destaca', image: '/planes/destaca.png' },
@@ -38,6 +39,13 @@ export interface BusinessImage {
   order: number
 }
 
+export interface BusinessVideo {
+  id: number
+  url: string
+  orientation: 'horizontal' | 'vertical'
+  order: number
+}
+
 export interface Business {
   id: number
   name: string
@@ -46,14 +54,13 @@ export interface Business {
   address: string | null
   phone: string | null
   email: string | null
-  video_url: string | null
-  video_orientation: 'horizontal' | 'vertical'
   tags: string[]
   active: boolean
   plan: PlanSlug | null
   average_rating: number
   reviews_count: number
   images: BusinessImage[]
+  videos: BusinessVideo[]
   categories: Category[]
   subcategories: Subcategory[]
   created_at: string

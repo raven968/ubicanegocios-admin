@@ -4,14 +4,18 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PLANS, type Business, type Category, type PlanSlug } from '../lib/types'
 
+interface VideoInput {
+  url: string
+  orientation: 'horizontal' | 'vertical'
+}
+
 interface FormState {
   name: string
   description: string
   address: string
   phone: string
   email: string
-  video_url: string
-  video_orientation: 'horizontal' | 'vertical'
+  videos: VideoInput[]
   tags: string
   active: boolean
   plan: PlanSlug | ''
@@ -25,8 +29,7 @@ const empty: FormState = {
   address: '',
   phone: '',
   email: '',
-  video_url: '',
-  video_orientation: 'horizontal',
+  videos: [],
   tags: '',
   active: true,
   plan: '',
@@ -63,8 +66,7 @@ export default function BusinessForm() {
         address: b.address ?? '',
         phone: b.phone ?? '',
         email: b.email ?? '',
-        video_url: b.video_url ?? '',
-        video_orientation: b.video_orientation ?? 'horizontal',
+        videos: (b.videos ?? []).map((v) => ({ url: v.url, orientation: v.orientation })),
         tags: (b.tags ?? []).join(', '),
         active: b.active,
         plan: b.plan ?? '',
@@ -85,6 +87,18 @@ export default function BusinessForm() {
     }))
   }
 
+  const addVideo = () =>
+    setForm((f) => ({ ...f, videos: [...f.videos, { url: '', orientation: 'horizontal' }] }))
+
+  const updateVideo = (index: number, patch: Partial<VideoInput>) =>
+    setForm((f) => ({
+      ...f,
+      videos: f.videos.map((v, i) => (i === index ? { ...v, ...patch } : v)),
+    }))
+
+  const removeVideo = (index: number) =>
+    setForm((f) => ({ ...f, videos: f.videos.filter((_, i) => i !== index) }))
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -95,8 +109,9 @@ export default function BusinessForm() {
       address: form.address || null,
       phone: form.phone || null,
       email: form.email || null,
-      video_url: form.video_url || null,
-      video_orientation: form.video_orientation,
+      videos: form.videos
+        .map((v) => ({ url: v.url.trim(), orientation: v.orientation }))
+        .filter((v) => v.url),
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       active: form.active,
       plan: form.plan || null,
@@ -183,34 +198,57 @@ export default function BusinessForm() {
           </Field>
         </div>
 
-        <Field label="URL de video (YouTube)">
-          <input
-            value={form.video_url}
-            onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-            placeholder="https://www.youtube.com/watch?v=…"
-            className="input"
-          />
-          <div className="mt-2 flex gap-4 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="video_orientation"
-                value="horizontal"
-                checked={form.video_orientation === 'horizontal'}
-                onChange={() => setForm({ ...form, video_orientation: 'horizontal' })}
-              />
-              <span className="text-gray-700">Horizontal (16:9)</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="video_orientation"
-                value="vertical"
-                checked={form.video_orientation === 'vertical'}
-                onChange={() => setForm({ ...form, video_orientation: 'vertical' })}
-              />
-              <span className="text-gray-700">Vertical / Short (9:16)</span>
-            </label>
+        <Field label="Videos (YouTube)">
+          <div className="space-y-3">
+            {form.videos.map((video, i) => (
+              <div key={i} className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-start gap-2">
+                  <input
+                    value={video.url}
+                    onChange={(e) => updateVideo(i, { url: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=…"
+                    className="input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVideo(i)}
+                    className="shrink-0 rounded-md border border-gray-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Quitar
+                  </button>
+                </div>
+                <div className="mt-2 flex gap-4 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`video_orientation_${i}`}
+                      checked={video.orientation === 'horizontal'}
+                      onChange={() => updateVideo(i, { orientation: 'horizontal' })}
+                    />
+                    <span className="text-gray-700">Horizontal (16:9)</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`video_orientation_${i}`}
+                      checked={video.orientation === 'vertical'}
+                      onChange={() => updateVideo(i, { orientation: 'vertical' })}
+                    />
+                    <span className="text-gray-700">Vertical / Short (9:16)</span>
+                  </label>
+                </div>
+              </div>
+            ))}
+            {form.videos.length === 0 && (
+              <p className="text-sm text-gray-400">Aún no hay videos.</p>
+            )}
+            <button
+              type="button"
+              onClick={addVideo}
+              className="rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-emerald-400"
+            >
+              + Agregar video
+            </button>
           </div>
         </Field>
 
