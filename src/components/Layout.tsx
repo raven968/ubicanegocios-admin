@@ -43,6 +43,17 @@ export default function Layout() {
             Cerrar sesión
           </button>
         </div>
+        <div className="px-5 py-3 text-xs text-gray-500">
+          Desarrollado por{' '}
+          <a
+            href="https://raventechnologic.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-emerald-400 hover:underline"
+          >
+            raventechnologic.com
+          </a>
+        </div>
       </aside>
       <main className="flex-1 overflow-auto p-8">
         <Outlet />
