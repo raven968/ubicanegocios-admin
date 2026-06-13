@@ -53,6 +53,7 @@ export interface Business {
   description: string | null
   address: string | null
   phone: string | null
+  phone2: string | null
   email: string | null
   facebook: string | null
   instagram: string | null

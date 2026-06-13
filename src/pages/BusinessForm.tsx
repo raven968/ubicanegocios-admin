@@ -14,6 +14,7 @@ interface FormState {
   description: string
   address: string
   phone: string
+  phone2: string
   email: string
   facebook: string
   instagram: string
@@ -33,6 +34,7 @@ const empty: FormState = {
   description: '',
   address: '',
   phone: '',
+  phone2: '',
   email: '',
   facebook: '',
   instagram: '',
@@ -75,6 +77,7 @@ export default function BusinessForm() {
         description: b.description ?? '',
         address: b.address ?? '',
         phone: b.phone ?? '',
+        phone2: b.phone2 ?? '',
         email: b.email ?? '',
         facebook: b.facebook ?? '',
         instagram: b.instagram ?? '',
@@ -123,6 +126,7 @@ export default function BusinessForm() {
       description: form.description || null,
       address: form.address || null,
       phone: form.phone || null,
+      phone2: form.phone2 || null,
       email: form.email || null,
       facebook: form.facebook || null,
       instagram: form.instagram || null,
@@ -208,6 +212,15 @@ export default function BusinessForm() {
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="+52 33 1234 5678"
+              className="input"
+            />
+          </Field>
+          <Field label="Teléfono 2 (opcional)">
+            <input
+              type="tel"
+              value={form.phone2}
+              onChange={(e) => setForm({ ...form, phone2: e.target.value })}
+              placeholder="+52 33 8765 4321"
               className="input"
             />
           </Field>
