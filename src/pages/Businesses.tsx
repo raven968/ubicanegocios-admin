@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import Pagination from '../components/Pagination'
 import { PLANS, type Business, type Paginated } from '../lib/types'
 
 export default function Businesses() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['businesses', search],
+    queryKey: ['businesses', search, page],
     queryFn: async () =>
-      (await api.get<Paginated<Business>>('/admin/businesses', { params: { search } })).data,
+      (await api.get<Paginated<Business>>('/admin/businesses', { params: { search, page } })).data,
+    placeholderData: keepPreviousData,
   })
 
   const del = useMutation({
@@ -33,7 +36,10 @@ export default function Businesses() {
 
       <input
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value)
+          setPage(1)
+        }}
         placeholder="Buscar por nombre…"
         className="mb-4 w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
       />
@@ -113,6 +119,8 @@ export default function Businesses() {
             )}
           </tbody>
         </table>
+
+        <Pagination meta={data?.meta} onPageChange={setPage} />
       </div>
     </div>
   )

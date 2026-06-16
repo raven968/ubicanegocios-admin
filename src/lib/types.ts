@@ -92,6 +92,13 @@ export interface AuthUser {
 
 export interface Paginated<T> {
   data: T[]
-  meta?: { current_page: number; last_page: number; total: number }
+  meta?: {
+    current_page: number
+    last_page: number
+    per_page: number
+    from: number | null
+    to: number | null
+    total: number
+  }
   links?: unknown
 }
