@@ -54,6 +54,7 @@ export interface Business {
   address: string | null
   phone: string | null
   phone2: string | null
+  whatsapp_phone: 'phone' | 'phone2' | null
   email: string | null
   facebook: string | null
   instagram: string | null

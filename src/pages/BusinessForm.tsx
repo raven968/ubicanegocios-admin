@@ -15,6 +15,7 @@ interface FormState {
   address: string
   phone: string
   phone2: string
+  whatsapp_phone: 'phone' | 'phone2' | ''
   email: string
   facebook: string
   instagram: string
@@ -35,6 +36,7 @@ const empty: FormState = {
   address: '',
   phone: '',
   phone2: '',
+  whatsapp_phone: '',
   email: '',
   facebook: '',
   instagram: '',
@@ -78,6 +80,7 @@ export default function BusinessForm() {
         address: b.address ?? '',
         phone: b.phone ?? '',
         phone2: b.phone2 ?? '',
+        whatsapp_phone: b.whatsapp_phone ?? '',
         email: b.email ?? '',
         facebook: b.facebook ?? '',
         instagram: b.instagram ?? '',
@@ -127,6 +130,7 @@ export default function BusinessForm() {
       address: form.address || null,
       phone: form.phone || null,
       phone2: form.phone2 || null,
+      whatsapp_phone: form.whatsapp_phone || null,
       email: form.email || null,
       facebook: form.facebook || null,
       instagram: form.instagram || null,
@@ -210,18 +214,42 @@ export default function BusinessForm() {
             <input
               type="tel"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  phone: e.target.value,
+                  whatsapp_phone:
+                    !e.target.value.trim() && f.whatsapp_phone === 'phone' ? '' : f.whatsapp_phone,
+                }))
+              }
               placeholder="+52 33 1234 5678"
               className="input"
+            />
+            <WhatsappToggle
+              checked={form.whatsapp_phone === 'phone'}
+              disabled={!form.phone.trim()}
+              onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone' : '' })}
             />
           </Field>
           <Field label="Teléfono 2 (opcional)">
             <input
               type="tel"
               value={form.phone2}
-              onChange={(e) => setForm({ ...form, phone2: e.target.value })}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  phone2: e.target.value,
+                  whatsapp_phone:
+                    !e.target.value.trim() && f.whatsapp_phone === 'phone2' ? '' : f.whatsapp_phone,
+                }))
+              }
               placeholder="+52 33 8765 4321"
               className="input"
+            />
+            <WhatsappToggle
+              checked={form.whatsapp_phone === 'phone2'}
+              disabled={!form.phone2.trim()}
+              onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone2' : '' })}
             />
           </Field>
           <Field label="Correo">
@@ -383,6 +411,33 @@ export default function BusinessForm() {
       {isEdit && business.data && <ImageManager business={business.data} />}
 
       <style>{`.input{width:100%;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.5rem 0.75rem;font-size:0.875rem}.input:focus{outline:none;border-color:#10b981}`}</style>
+    </div>
+  )
+}
+
+function WhatsappToggle({
+  checked,
+  disabled,
+  onChange,
+}: {
+  checked: boolean
+  disabled?: boolean
+  onChange: (on: boolean) => void
+}) {
+  return (
+    <div
+      className={`mt-1.5 flex items-center gap-1.5 text-xs ${
+        disabled ? 'text-gray-300' : 'text-gray-600'
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="accent-emerald-600"
+      />
+      <span>Este número es WhatsApp</span>
     </div>
   )
 }
