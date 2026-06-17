@@ -9,6 +9,10 @@ const ICON_ENTRIES: { name: string; slug: string; Component: LucideIcon }[] = ((
     if (!/^[A-Z]/.test(name)) continue
     if (name === 'Icon' || name === 'LucideIcon' || name === 'createLucideIcon') continue
     if (name.endsWith('Icon')) continue
+    // lucide-react also exports "Lucide"-prefixed aliases (LucideUserStar, …).
+    // They produce slugs like "lucide-user-star" that become the invalid name
+    // "lucide:lucide-user-star", so skip them and keep only the canonical name.
+    if (name.startsWith('Lucide')) continue
     const slug = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
     if (seen.has(slug)) continue
     seen.add(slug)
