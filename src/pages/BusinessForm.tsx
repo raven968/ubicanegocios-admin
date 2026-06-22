@@ -195,6 +195,11 @@ export default function BusinessForm() {
             rows={4}
             className="input"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Puedes agregar links con formato Markdown:{' '}
+            <code>[texto del enlace](https://ejemplo.com)</code>. También sirven{' '}
+            <code>**negrita**</code> y listas.
+          </p>
         </Field>
 
         <Field label="Dirección">
