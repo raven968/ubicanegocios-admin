@@ -40,7 +40,7 @@ export default function Businesses() {
           setSearch(e.target.value)
           setPage(1)
         }}
-        placeholder="Buscar por nombre…"
+        placeholder="Buscar por nombre o folio…"
         className="mb-4 w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
       />
 
@@ -48,6 +48,7 @@ export default function Businesses() {
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
+              <th className="px-4 py-3">Folio</th>
               <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">Categorías</th>
               <th className="px-4 py-3">Plan</th>
@@ -59,13 +60,14 @@ export default function Businesses() {
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   Cargando…
                 </td>
               </tr>
             )}
             {data?.data.map((b) => (
               <tr key={b.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 font-mono text-xs text-gray-600">{b.folio || '—'}</td>
                 <td className="px-4 py-3 font-medium text-gray-900">{b.name}</td>
                 <td className="px-4 py-3 text-gray-600">
                   {b.categories.map((c) => c.name).join(', ') || '—'}
@@ -112,7 +114,7 @@ export default function Businesses() {
             ))}
             {data?.data.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   Sin negocios.
                 </td>
               </tr>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import axios from 'axios'
 import api from '../lib/api'
 import { PLANS, type Business, type Category, type PlanSlug } from '../lib/types'
 
@@ -11,6 +12,7 @@ interface VideoInput {
 
 interface FormState {
   name: string
+  folio: string
   description: string
   address: string
   phone: string
@@ -32,6 +34,7 @@ interface FormState {
 
 const empty: FormState = {
   name: '',
+  folio: '',
   description: '',
   address: '',
   phone: '',
@@ -76,6 +79,7 @@ export default function BusinessForm() {
       const b = business.data
       setForm({
         name: b.name,
+        folio: b.folio ?? '',
         description: b.description ?? '',
         address: b.address ?? '',
         phone: b.phone ?? '',
@@ -126,6 +130,7 @@ export default function BusinessForm() {
     setSaving(true)
     const payload = {
       name: form.name,
+      folio: form.folio.trim() || null,
       description: form.description || null,
       address: form.address || null,
       phone: form.phone || null,
@@ -157,8 +162,12 @@ export default function BusinessForm() {
       }
       qc.invalidateQueries({ queryKey: ['businesses'] })
       qc.invalidateQueries({ queryKey: ['business', id] })
-    } catch {
-      setError('No se pudo guardar. Revisa los campos.')
+    } catch (e) {
+      setError(
+        (axios.isAxiosError(e) && e.response?.status === 422
+          ? (e.response.data as { message?: string }).message
+          : null) ?? 'No se pudo guardar. Revisa los campos.',
+      )
     } finally {
       setSaving(false)
     }
@@ -186,6 +195,21 @@ export default function BusinessForm() {
             className="input"
             required
           />
+        </Field>
+
+        <Field label="Folio">
+          <input
+            value={form.folio}
+            onChange={(e) => setForm({ ...form, folio: e.target.value.toUpperCase() })}
+            placeholder="UN-0001"
+            maxLength={30}
+            pattern="[A-Za-z0-9-]+"
+            className="input font-mono"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Uso interno, no se muestra en el sitio público. Letras, números y guiones; no se puede
+            repetir entre negocios.
+          </p>
         </Field>
 
         <Field label="Descripción">

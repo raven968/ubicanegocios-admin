@@ -50,6 +50,8 @@ export interface Business {
   id: number
   name: string
   slug: string
+  /** Solo lo devuelven los endpoints de admin. */
+  folio: string | null
   description: string | null
   address: string | null
   phone: string | null
