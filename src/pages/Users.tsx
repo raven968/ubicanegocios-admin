@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useAuth } from '../lib/auth'
+import SubmitButton from '../components/SubmitButton'
 
 interface AdminUser {
   id: number
@@ -278,17 +279,12 @@ function UserModal({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+              disabled={saving}
+              className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {saving ? 'Guardando…' : submitLabel}
-            </button>
+            <SubmitButton loading={saving}>{submitLabel}</SubmitButton>
           </div>
         </form>
 

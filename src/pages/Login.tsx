@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import SubmitButton from '../components/SubmitButton'
 
 export default function Login() {
   const { login, user } = useAuth()
@@ -63,13 +64,9 @@ export default function Login() {
             required
           />
         </label>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-emerald-600 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
-          {loading ? 'Entrando…' : 'Iniciar sesión'}
-        </button>
+        <SubmitButton loading={loading} loadingLabel="Entrando…" className="w-full">
+          Iniciar sesión
+        </SubmitButton>
       </form>
     </div>
   )

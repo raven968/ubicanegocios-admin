@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import api from '../lib/api'
-import { PLANS, type Business, type Category, type PlanSlug } from '../lib/types'
+import SubmitButton from '../components/SubmitButton'
+import { Loader2 } from 'lucide-react'
+import { PLANS, type Business, type Category, type PlanSlug, type Zone } from '../lib/types'
 
 interface VideoInput {
   url: string
@@ -30,6 +32,7 @@ interface FormState {
   plan: PlanSlug | ''
   category_ids: number[]
   subcategory_ids: number[]
+  zone_ids: number[]
 }
 
 const empty: FormState = {
@@ -52,6 +55,7 @@ const empty: FormState = {
   plan: '',
   category_ids: [],
   subcategory_ids: [],
+  zone_ids: [],
 }
 
 export default function BusinessForm() {
@@ -66,6 +70,11 @@ export default function BusinessForm() {
   const categories = useQuery({
     queryKey: ['categories'],
     queryFn: async () => (await api.get<{ data: Category[] }>('/categories')).data.data,
+  })
+
+  const zones = useQuery({
+    queryKey: ['zones'],
+    queryFn: async () => (await api.get<{ data: Zone[] }>('/zones')).data.data,
   })
 
   const business = useQuery({
@@ -97,6 +106,7 @@ export default function BusinessForm() {
         plan: b.plan ?? '',
         category_ids: b.categories.map((c) => c.id),
         subcategory_ids: b.subcategories.map((s) => s.id),
+        zone_ids: (b.zones ?? []).map((z) => z.id),
       })
     }
   }, [business.data])
@@ -105,7 +115,7 @@ export default function BusinessForm() {
     .filter((c) => form.category_ids.includes(c.id))
     .flatMap((c) => c.subcategories ?? [])
 
-  const toggle = (key: 'category_ids' | 'subcategory_ids', value: number) => {
+  const toggle = (key: 'category_ids' | 'subcategory_ids' | 'zone_ids', value: number) => {
     setForm((f) => ({
       ...f,
       [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value],
@@ -150,6 +160,7 @@ export default function BusinessForm() {
       plan: form.plan || null,
       category_ids: form.category_ids,
       subcategory_ids: form.subcategory_ids,
+      zone_ids: form.zone_ids,
     }
     try {
       if (isEdit) {
@@ -385,6 +396,48 @@ export default function BusinessForm() {
           </Field>
         )}
 
+        <Field label="Zonas">
+          <select
+            value=""
+            onChange={(e) => {
+              const zoneId = Number(e.target.value)
+              if (zoneId) toggle('zone_ids', zoneId)
+            }}
+            className="input"
+          >
+            <option value="">— Agregar zona —</option>
+            {(zones.data ?? [])
+              .filter((z) => !form.zone_ids.includes(z.id))
+              .map((z) => (
+                <option key={z.id} value={z.id}>{z.name}</option>
+              ))}
+          </select>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {form.zone_ids.map((zoneId) => {
+              const zone = zones.data?.find((z) => z.id === zoneId)
+              return (
+                <span
+                  key={zoneId}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
+                >
+                  {zone?.name ?? `#${zoneId}`}
+                  <button
+                    type="button"
+                    onClick={() => toggle('zone_ids', zoneId)}
+                    className="text-emerald-100 hover:text-white"
+                    aria-label={`Quitar ${zone?.name ?? 'zona'}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Un negocio puede pertenecer a más de una zona. Se dan de alta en la sección Zonas.
+          </p>
+        </Field>
+
         <Field label="Plan">
           <div className="flex items-center gap-3">
             <select
@@ -417,17 +470,14 @@ export default function BusinessForm() {
         </label>
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {saving ? 'Guardando…' : 'Guardar'}
-          </button>
+          <SubmitButton loading={saving} className="px-5">
+            Guardar
+          </SubmitButton>
           <button
             type="button"
             onClick={() => navigate('/negocios')}
-            className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            disabled={saving}
+            className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
           >
             Cancelar
           </button>
@@ -583,12 +633,18 @@ function ImageManager({ business }: { business: Business }) {
           <p className="col-span-full text-sm text-gray-400">Aún no hay imágenes.</p>
         )}
       </div>
-      <label className="inline-block cursor-pointer rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-emerald-400">
+      <label
+        className={`inline-flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 ${
+          uploading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-emerald-400'
+        }`}
+      >
+        {uploading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
         {uploading ? 'Subiendo…' : '+ Subir imágenes'}
         <input
           type="file"
           multiple
           accept="image/*"
+          disabled={uploading}
           className="hidden"
           onChange={(e) => onUpload(e.target.files)}
         />

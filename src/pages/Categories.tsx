@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import type { Category } from '../lib/types'
 import IconPicker, { IconPreview, iconNameToSlug } from '../components/IconPicker'
+import SubmitButton from '../components/SubmitButton'
 
 export default function Categories() {
   const qc = useQueryClient()
@@ -81,9 +82,9 @@ export default function Categories() {
           placeholder="Nueva categoría"
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
         />
-        <button className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+        <SubmitButton loading={addCat.isPending} loadingLabel="Agregando…">
           Agregar
-        </button>
+        </SubmitButton>
       </form>
 
       {isLoading && <p className="text-gray-400">Cargando…</p>}
@@ -147,9 +148,14 @@ export default function Categories() {
                 placeholder="Nueva subcategoría"
                 className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none"
               />
-              <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+              <SubmitButton
+                variant="outline"
+                loading={addSub.isPending && addSub.variables?.category_id === cat.id}
+                loadingLabel="Agregando…"
+                className="px-3 py-1.5"
+              >
                 + Subcategoría
-              </button>
+              </SubmitButton>
             </form>
           </div>
         ))}

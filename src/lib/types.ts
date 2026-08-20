@@ -33,6 +33,14 @@ export interface Category {
   businesses_count?: number
 }
 
+export interface Zone {
+  id: number
+  name: string
+  slug: string
+  order: number
+  businesses_count?: number
+}
+
 export interface BusinessImage {
   id: number
   url: string
@@ -72,6 +80,7 @@ export interface Business {
   videos: BusinessVideo[]
   categories: Category[]
   subcategories: Subcategory[]
+  zones: Zone[]
   created_at: string
 }
 

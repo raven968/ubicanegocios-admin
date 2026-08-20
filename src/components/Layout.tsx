@@ -5,6 +5,7 @@ const links = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/negocios', label: 'Negocios' },
   { to: '/categorias', label: 'Categorías' },
+  { to: '/zonas', label: 'Zonas' },
   { to: '/resenas', label: 'Reseñas' },
   { to: '/usuarios', label: 'Usuarios' },
 ]
