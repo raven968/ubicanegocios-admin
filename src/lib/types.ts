@@ -74,6 +74,11 @@ export interface Business {
   tags: string[]
   active: boolean
   plan: PlanSlug | null
+  /** Cobranza. Solo lo devuelven los endpoints de admin. */
+  joined_at: string | null
+  contact_name: string | null
+  /** Día del mes (1-31) en que toca cobrarle la cuota. */
+  payment_day: number | null
   average_rating: number
   reviews_count: number
   images: BusinessImage[]
@@ -84,6 +89,13 @@ export interface Business {
   created_at: string
 }
 
+/** Cliente elegido en cobranza: lo mínimo para identificarlo y sugerir su próximo cobro. */
+export interface BusinessRef {
+  id: number
+  name: string
+  payment_day?: number | null
+}
+
 export interface Review {
   id: number
   business_id: number
@@ -92,6 +104,78 @@ export interface Review {
   rating: number
   created_at: string
   business?: { id: number; name: string; slug: string }
+}
+
+export type MovementType = 'income' | 'expense'
+/** `manual` = captura libre; `fee` = cuota cobrada a un cliente. */
+export type MovementSource = 'manual' | 'fee'
+
+export interface CashMovement {
+  id: number
+  type: MovementType
+  source: MovementSource
+  concept: string
+  quantity: number
+  /** Monto unitario. */
+  amount: number
+  /** quantity × amount, calculado en la API. */
+  total: number
+  occurred_at: string
+  next_charge_date: string | null
+  notes: string | null
+  business?: {
+    id: number
+    name: string
+    folio: string | null
+    phone: string | null
+    plan: PlanSlug | null
+    payment_day: number | null
+  }
+  user?: string | null
+  created_at: string
+}
+
+export interface CashTotals {
+  income: number
+  expense: number
+  balance: number
+  count: number
+}
+
+export interface DueCharge {
+  business_id: number
+  business_name: string
+  folio: string | null
+  phone: string | null
+  plan: PlanSlug | null
+  payment_day: number | null
+  concept: string
+  amount: number
+  quantity: number
+  unit_amount: number
+  last_payment_at: string | null
+  next_charge_date: string
+  days_overdue: number
+}
+
+export interface DueChargesResponse {
+  date: string
+  count: number
+  total: number
+  overdue_count: number
+  data: DueCharge[]
+}
+
+export interface CashSummary {
+  from: string
+  to: string
+  income: number
+  expense: number
+  balance: number
+  count: number
+  income_by_source: { fee: number; manual: number }
+  months: { month: string; income: number; expense: number; balance: number }[]
+  top_clients: { business_id: number; business_name: string; total: number; payments: number }[]
 }
 
 export interface AuthUser {

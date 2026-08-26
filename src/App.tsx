@@ -7,6 +7,9 @@ import Dashboard from './pages/Dashboard'
 import Businesses from './pages/Businesses'
 import BusinessForm from './pages/BusinessForm'
 import Categories from './pages/Categories'
+import Cobranza from './pages/Cobranza'
+import CobranzaCortes from './pages/CobranzaCortes'
+import HojaCobro from './pages/HojaCobro'
 import Zones from './pages/Zones'
 import Reviews from './pages/Reviews'
 import Users from './pages/Users'
@@ -35,6 +38,9 @@ export default function App() {
         <Route path="/negocios" element={<Businesses />} />
         <Route path="/negocios/nuevo" element={<BusinessForm />} />
         <Route path="/negocios/:id" element={<BusinessForm />} />
+        <Route path="/cobranza" element={<Cobranza />} />
+        <Route path="/cobranza/cortes" element={<CobranzaCortes />} />
+        <Route path="/cobranza/hoja" element={<HojaCobro />} />
         <Route path="/categorias" element={<Categories />} />
         <Route path="/zonas" element={<Zones />} />
         <Route path="/resenas" element={<Reviews />} />

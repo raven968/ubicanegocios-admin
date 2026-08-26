@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import api from '../lib/api'
 import SubmitButton from '../components/SubmitButton'
+import BusinessPayments from '../components/BusinessPayments'
 import { Loader2 } from 'lucide-react'
 import { PLANS, type Business, type Category, type PlanSlug, type Zone } from '../lib/types'
 
@@ -11,6 +12,8 @@ interface VideoInput {
   url: string
   orientation: 'horizontal' | 'vertical'
 }
+
+type Tab = 'general' | 'cobranza'
 
 interface FormState {
   name: string
@@ -30,6 +33,9 @@ interface FormState {
   tags: string
   active: boolean
   plan: PlanSlug | ''
+  joined_at: string
+  contact_name: string
+  payment_day: string
   category_ids: number[]
   subcategory_ids: number[]
   zone_ids: number[]
@@ -53,6 +59,9 @@ const empty: FormState = {
   tags: '',
   active: true,
   plan: '',
+  joined_at: '',
+  contact_name: '',
+  payment_day: '',
   category_ids: [],
   subcategory_ids: [],
   zone_ids: [],
@@ -66,6 +75,7 @@ export default function BusinessForm() {
   const [form, setForm] = useState<FormState>(empty)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('general')
 
   const categories = useQuery({
     queryKey: ['categories'],
@@ -104,6 +114,9 @@ export default function BusinessForm() {
         tags: (b.tags ?? []).join(', '),
         active: b.active,
         plan: b.plan ?? '',
+        joined_at: b.joined_at ?? '',
+        contact_name: b.contact_name ?? '',
+        payment_day: b.payment_day ? String(b.payment_day) : '',
         category_ids: b.categories.map((c) => c.id),
         subcategory_ids: b.subcategories.map((s) => s.id),
         zone_ids: (b.zones ?? []).map((z) => z.id),
@@ -137,6 +150,12 @@ export default function BusinessForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    // El campo vive en otra pestaña, así que el navegador no puede señalarlo solo.
+    if (!form.name.trim()) {
+      setTab('general')
+      setError('El nombre es obligatorio.')
+      return
+    }
     setSaving(true)
     const payload = {
       name: form.name,
@@ -158,6 +177,9 @@ export default function BusinessForm() {
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       active: form.active,
       plan: form.plan || null,
+      joined_at: form.joined_at || null,
+      contact_name: form.contact_name.trim() || null,
+      payment_day: form.payment_day ? Number(form.payment_day) : null,
       category_ids: form.category_ids,
       subcategory_ids: form.subcategory_ids,
       zone_ids: form.zone_ids,
@@ -194,282 +216,298 @@ export default function BusinessForm() {
         <div className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <form
-          onSubmit={onSubmit}
-          className="space-y-5 rounded-xl border border-gray-200 bg-white p-6 lg:col-span-2"
-        >
-        <Field label="Nombre">
-          <input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="input"
-            required
-          />
-        </Field>
+      <div className="mb-5 flex gap-1 border-b border-gray-200">
+        <TabButton active={tab === 'general'} onClick={() => setTab('general')}>
+          Información general
+        </TabButton>
+        <TabButton active={tab === 'cobranza'} onClick={() => setTab('cobranza')}>
+          Cobranza
+        </TabButton>
+      </div>
 
-        <Field label="Folio">
-          <input
-            value={form.folio}
-            onChange={(e) => setForm({ ...form, folio: e.target.value.toUpperCase() })}
-            placeholder="UN-0001"
-            maxLength={30}
-            pattern="[A-Za-z0-9-]+"
-            className="input font-mono"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Uso interno, no se muestra en el sitio público. Letras, números y guiones; no se puede
-            repetir entre negocios.
-          </p>
-        </Field>
+      <form onSubmit={onSubmit}>
+        {tab === 'general' && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-6 lg:col-span-2">
+              <Field label="Nombre">
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="input"
+                />
+              </Field>
 
-        <Field label="Descripción">
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            rows={4}
-            className="input"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Puedes agregar links con formato Markdown:{' '}
-            <code>[texto del enlace](https://ejemplo.com)</code>. También sirven{' '}
-            <code>**negrita**</code> y listas.
-          </p>
-        </Field>
+              <Field label="Folio">
+                <input
+                  value={form.folio}
+                  onChange={(e) => setForm({ ...form, folio: e.target.value.toUpperCase() })}
+                  placeholder="UN-0001"
+                  maxLength={30}
+                  pattern="[A-Za-z0-9-]+"
+                  className="input font-mono"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Uso interno, no se muestra en el sitio público. Letras, números y guiones; no se puede
+                  repetir entre negocios.
+                </p>
+              </Field>
 
-        <Field label="Dirección">
-          <input
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            placeholder="Calle, número, colonia, ciudad, estado"
-            className="input"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Se usa también para el mapa de Google en la ficha pública.
-          </p>
-        </Field>
+              <Field label="Descripción">
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  rows={4}
+                  className="input"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Puedes agregar links con formato Markdown:{' '}
+                  <code>[texto del enlace](https://ejemplo.com)</code>. También sirven{' '}
+                  <code>**negrita**</code> y listas.
+                </p>
+              </Field>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Teléfono">
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  phone: e.target.value,
-                  whatsapp_phone:
-                    !e.target.value.trim() && f.whatsapp_phone === 'phone' ? '' : f.whatsapp_phone,
-                }))
-              }
-              placeholder="+52 33 1234 5678"
-              className="input"
-            />
-            <WhatsappToggle
-              checked={form.whatsapp_phone === 'phone'}
-              disabled={!form.phone.trim()}
-              onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone' : '' })}
-            />
-          </Field>
-          <Field label="Teléfono 2 (opcional)">
-            <input
-              type="tel"
-              value={form.phone2}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  phone2: e.target.value,
-                  whatsapp_phone:
-                    !e.target.value.trim() && f.whatsapp_phone === 'phone2' ? '' : f.whatsapp_phone,
-                }))
-              }
-              placeholder="+52 33 8765 4321"
-              className="input"
-            />
-            <WhatsappToggle
-              checked={form.whatsapp_phone === 'phone2'}
-              disabled={!form.phone2.trim()}
-              onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone2' : '' })}
-            />
-          </Field>
-          <Field label="Correo">
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="contacto@negocio.mx"
-              className="input"
-            />
-          </Field>
-        </div>
+              <Field label="Dirección">
+                <input
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Calle, número, colonia, ciudad, estado"
+                  className="input"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Se usa también para el mapa de Google en la ficha pública.
+                </p>
+              </Field>
 
-        <Field label="Videos (YouTube)">
-          <div className="space-y-3">
-            {form.videos.map((video, i) => (
-              <div key={i} className="rounded-lg border border-gray-200 p-3">
-                <div className="flex items-start gap-2">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <Field label="Teléfono">
                   <input
-                    value={video.url}
-                    onChange={(e) => updateVideo(i, { url: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=…"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        phone: e.target.value,
+                        whatsapp_phone:
+                          !e.target.value.trim() && f.whatsapp_phone === 'phone' ? '' : f.whatsapp_phone,
+                      }))
+                    }
+                    placeholder="+52 33 1234 5678"
                     className="input"
                   />
+                  <WhatsappToggle
+                    checked={form.whatsapp_phone === 'phone'}
+                    disabled={!form.phone.trim()}
+                    onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone' : '' })}
+                  />
+                </Field>
+                <Field label="Teléfono 2 (opcional)">
+                  <input
+                    type="tel"
+                    value={form.phone2}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        phone2: e.target.value,
+                        whatsapp_phone:
+                          !e.target.value.trim() && f.whatsapp_phone === 'phone2' ? '' : f.whatsapp_phone,
+                      }))
+                    }
+                    placeholder="+52 33 8765 4321"
+                    className="input"
+                  />
+                  <WhatsappToggle
+                    checked={form.whatsapp_phone === 'phone2'}
+                    disabled={!form.phone2.trim()}
+                    onChange={(on) => setForm({ ...form, whatsapp_phone: on ? 'phone2' : '' })}
+                  />
+                </Field>
+                <Field label="Correo">
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="contacto@negocio.mx"
+                    className="input"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Videos (YouTube)">
+                <div className="space-y-3">
+                  {form.videos.map((video, i) => (
+                    <div key={i} className="rounded-lg border border-gray-200 p-3">
+                      <div className="flex items-start gap-2">
+                        <input
+                          value={video.url}
+                          onChange={(e) => updateVideo(i, { url: e.target.value })}
+                          placeholder="https://www.youtube.com/watch?v=…"
+                          className="input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeVideo(i)}
+                          className="shrink-0 rounded-md border border-gray-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                      <div className="mt-2 flex gap-4 text-sm">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`video_orientation_${i}`}
+                            checked={video.orientation === 'horizontal'}
+                            onChange={() => updateVideo(i, { orientation: 'horizontal' })}
+                          />
+                          <span className="text-gray-700">Horizontal (16:9)</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`video_orientation_${i}`}
+                            checked={video.orientation === 'vertical'}
+                            onChange={() => updateVideo(i, { orientation: 'vertical' })}
+                          />
+                          <span className="text-gray-700">Vertical / Short (9:16)</span>
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                  {form.videos.length === 0 && (
+                    <p className="text-sm text-gray-400">Aún no hay videos.</p>
+                  )}
                   <button
                     type="button"
-                    onClick={() => removeVideo(i)}
-                    className="shrink-0 rounded-md border border-gray-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    onClick={addVideo}
+                    className="rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-emerald-400"
                   >
-                    Quitar
+                    + Agregar video
                   </button>
                 </div>
-                <div className="mt-2 flex gap-4 text-sm">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name={`video_orientation_${i}`}
-                      checked={video.orientation === 'horizontal'}
-                      onChange={() => updateVideo(i, { orientation: 'horizontal' })}
-                    />
-                    <span className="text-gray-700">Horizontal (16:9)</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name={`video_orientation_${i}`}
-                      checked={video.orientation === 'vertical'}
-                      onChange={() => updateVideo(i, { orientation: 'vertical' })}
-                    />
-                    <span className="text-gray-700">Vertical / Short (9:16)</span>
-                  </label>
+              </Field>
+
+              <Field label="Tags (separados por coma)">
+                <input
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="tacos, comida, pastor"
+                  className="input"
+                />
+              </Field>
+
+              <Field label="Categorías">
+                <div className="flex flex-wrap gap-2">
+                  {categories.data?.map((c) => (
+                    <Chip
+                      key={c.id}
+                      active={form.category_ids.includes(c.id)}
+                      onClick={() => toggle('category_ids', c.id)}
+                    >
+                      {c.name}
+                    </Chip>
+                  ))}
                 </div>
-              </div>
-            ))}
-            {form.videos.length === 0 && (
-              <p className="text-sm text-gray-400">Aún no hay videos.</p>
-            )}
-            <button
-              type="button"
-              onClick={addVideo}
-              className="rounded-md border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-emerald-400"
-            >
-              + Agregar video
-            </button>
-          </div>
-        </Field>
+              </Field>
 
-        <Field label="Tags (separados por coma)">
-          <input
-            value={form.tags}
-            onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            placeholder="tacos, comida, pastor"
-            className="input"
-          />
-        </Field>
+              {availableSubcategories.length > 0 && (
+                <Field label="Subcategorías">
+                  <div className="flex flex-wrap gap-2">
+                    {availableSubcategories.map((s) => (
+                      <Chip
+                        key={s.id}
+                        active={form.subcategory_ids.includes(s.id)}
+                        onClick={() => toggle('subcategory_ids', s.id)}
+                      >
+                        {s.name}
+                      </Chip>
+                    ))}
+                  </div>
+                </Field>
+              )}
 
-        <Field label="Categorías">
-          <div className="flex flex-wrap gap-2">
-            {categories.data?.map((c) => (
-              <Chip
-                key={c.id}
-                active={form.category_ids.includes(c.id)}
-                onClick={() => toggle('category_ids', c.id)}
-              >
-                {c.name}
-              </Chip>
-            ))}
-          </div>
-        </Field>
-
-        {availableSubcategories.length > 0 && (
-          <Field label="Subcategorías">
-            <div className="flex flex-wrap gap-2">
-              {availableSubcategories.map((s) => (
-                <Chip
-                  key={s.id}
-                  active={form.subcategory_ids.includes(s.id)}
-                  onClick={() => toggle('subcategory_ids', s.id)}
+              <Field label="Zonas">
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const zoneId = Number(e.target.value)
+                    if (zoneId) toggle('zone_ids', zoneId)
+                  }}
+                  className="input"
                 >
-                  {s.name}
-                </Chip>
-              ))}
+                  <option value="">— Agregar zona —</option>
+                  {(zones.data ?? [])
+                    .filter((z) => !form.zone_ids.includes(z.id))
+                    .map((z) => (
+                      <option key={z.id} value={z.id}>{z.name}</option>
+                    ))}
+                </select>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {form.zone_ids.map((zoneId) => {
+                    const zone = zones.data?.find((z) => z.id === zoneId)
+                    return (
+                      <span
+                        key={zoneId}
+                        className="inline-flex items-center gap-1 rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
+                      >
+                        {zone?.name ?? `#${zoneId}`}
+                        <button
+                          type="button"
+                          onClick={() => toggle('zone_ids', zoneId)}
+                          className="text-emerald-100 hover:text-white"
+                          aria-label={`Quitar ${zone?.name ?? 'zona'}`}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    )
+                  })}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Un negocio puede pertenecer a más de una zona. Se dan de alta en la sección Zonas.
+                </p>
+              </Field>
+
+              <Field label="Plan">
+                <div className="flex items-center gap-3">
+                  <select
+                    value={form.plan}
+                    onChange={(e) => setForm({ ...form, plan: e.target.value as PlanSlug | '' })}
+                    className="input"
+                  >
+                    <option value="">— Sin plan —</option>
+                    {PLANS.map((p) => (
+                      <option key={p.slug} value={p.slug}>{p.name}</option>
+                    ))}
+                  </select>
+                  {form.plan && (
+                    <img
+                      src={PLANS.find((p) => p.slug === form.plan)?.image}
+                      alt=""
+                      className="h-12 w-12 shrink-0 object-contain"
+                    />
+                  )}
+                </div>
+              </Field>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                />
+                <span className="font-medium text-gray-700">Activo (visible en la web)</span>
+              </label>
             </div>
-          </Field>
+
+            <SocialPanel form={form} setForm={setForm} />
+          </div>
         )}
 
-        <Field label="Zonas">
-          <select
-            value=""
-            onChange={(e) => {
-              const zoneId = Number(e.target.value)
-              if (zoneId) toggle('zone_ids', zoneId)
-            }}
-            className="input"
-          >
-            <option value="">— Agregar zona —</option>
-            {(zones.data ?? [])
-              .filter((z) => !form.zone_ids.includes(z.id))
-              .map((z) => (
-                <option key={z.id} value={z.id}>{z.name}</option>
-              ))}
-          </select>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {form.zone_ids.map((zoneId) => {
-              const zone = zones.data?.find((z) => z.id === zoneId)
-              return (
-                <span
-                  key={zoneId}
-                  className="inline-flex items-center gap-1 rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
-                >
-                  {zone?.name ?? `#${zoneId}`}
-                  <button
-                    type="button"
-                    onClick={() => toggle('zone_ids', zoneId)}
-                    className="text-emerald-100 hover:text-white"
-                    aria-label={`Quitar ${zone?.name ?? 'zona'}`}
-                  >
-                    ✕
-                  </button>
-                </span>
-              )
-            })}
-          </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Un negocio puede pertenecer a más de una zona. Se dan de alta en la sección Zonas.
-          </p>
-        </Field>
+        {tab === 'cobranza' && (
+          <BillingPanel form={form} setForm={setForm} businessId={isEdit ? Number(id) : null} />
+        )}
 
-        <Field label="Plan">
-          <div className="flex items-center gap-3">
-            <select
-              value={form.plan}
-              onChange={(e) => setForm({ ...form, plan: e.target.value as PlanSlug | '' })}
-              className="input"
-            >
-              <option value="">— Sin plan —</option>
-              {PLANS.map((p) => (
-                <option key={p.slug} value={p.slug}>{p.name}</option>
-              ))}
-            </select>
-            {form.plan && (
-              <img
-                src={PLANS.find((p) => p.slug === form.plan)?.image}
-                alt=""
-                className="h-12 w-12 shrink-0 object-contain"
-              />
-            )}
-          </div>
-        </Field>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.active}
-            onChange={(e) => setForm({ ...form, active: e.target.checked })}
-          />
-          <span className="font-medium text-gray-700">Activo (visible en la web)</span>
-        </label>
-
-        <div className="flex gap-3">
+        <div className="mt-6 flex gap-3">
           <SubmitButton loading={saving} className="px-5">
             Guardar
           </SubmitButton>
@@ -482,12 +520,9 @@ export default function BusinessForm() {
             Cancelar
           </button>
         </div>
-        </form>
+      </form>
 
-        <SocialPanel form={form} setForm={setForm} />
-      </div>
-
-      {isEdit && business.data && <ImageManager business={business.data} />}
+      {tab === 'general' && isEdit && business.data && <ImageManager business={business.data} />}
 
       <style>{`.input{width:100%;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.5rem 0.75rem;font-size:0.875rem}.input:focus{outline:none;border-color:#10b981}`}</style>
     </div>
@@ -517,6 +552,95 @@ function WhatsappToggle({
         className="accent-emerald-600"
       />
       <span>Este número es WhatsApp</span>
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition ${
+        active
+          ? 'border-emerald-600 text-emerald-700'
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * Datos que solo usa cobranza: cuándo entró el cliente, con quién se trata y el
+ * día del mes en que toca cobrarle, más el historial de cuotas ya cobradas.
+ */
+function BillingPanel({
+  form,
+  setForm,
+  businessId,
+}: {
+  form: FormState
+  setForm: React.Dispatch<React.SetStateAction<FormState>>
+  businessId: number | null
+}) {
+  return (
+    <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <Field label="Fecha de ingreso">
+          <input
+            type="date"
+            value={form.joined_at}
+            onChange={(e) => setForm((f) => ({ ...f, joined_at: e.target.value }))}
+            className="input"
+          />
+          <p className="mt-1 text-xs text-gray-500">Cuándo se dio de alta como cliente.</p>
+        </Field>
+
+        <Field label="Nombre del encargado o dueño">
+          <input
+            value={form.contact_name}
+            onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))}
+            placeholder="Con quién se trata el cobro"
+            maxLength={150}
+            className="input"
+          />
+        </Field>
+
+        <Field label="Día de pago">
+          <input
+            type="number"
+            min={1}
+            max={31}
+            step={1}
+            value={form.payment_day}
+            onChange={(e) => setForm((f) => ({ ...f, payment_day: e.target.value }))}
+            placeholder="1 – 31"
+            className="input"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Día del mes. Al registrar una entrada por cuota de este cliente se sugiere ese día del
+            mes siguiente como próxima fecha de cobro.
+          </p>
+        </Field>
+      </div>
+
+      {businessId ? (
+        <BusinessPayments businessId={businessId} />
+      ) : (
+        <p className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-400">
+          Guarda el negocio para ver aquí su historial de abonos.
+        </p>
+      )}
     </div>
   )
 }

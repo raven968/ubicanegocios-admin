@@ -1,9 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import DueChargesBanner from './DueChargesBanner'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/negocios', label: 'Negocios' },
+  { to: '/cobranza', label: 'Cobranza' },
   { to: '/categorias', label: 'Categorías' },
   { to: '/zonas', label: 'Zonas' },
   { to: '/resenas', label: 'Reseñas' },
@@ -15,7 +17,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-800">
-      <aside className="flex w-60 flex-col bg-gray-900 text-gray-100">
+      <aside className="flex w-60 flex-col bg-gray-900 text-gray-100 print:hidden">
         <div className="px-5 py-6 text-xl font-bold tracking-tight">
           Ubica<span className="text-emerald-400">Negocios</span>
         </div>
@@ -56,9 +58,11 @@ export default function Layout() {
           </a>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto p-8 print:overflow-visible print:p-0">
         <Outlet />
       </main>
+
+      <DueChargesBanner />
     </div>
   )
 }

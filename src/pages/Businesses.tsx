@@ -1,21 +1,38 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import api from '../lib/api'
+import { today } from '../lib/cash'
+import { downloadCsv } from '../lib/download'
 import Pagination from '../components/Pagination'
 import { PLANS, type Business, type Paginated } from '../lib/types'
 
 export default function Businesses() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  const [active, setActive] = useState<'' | '1' | '0'>('')
   const [page, setPage] = useState(1)
+  const [exporting, setExporting] = useState(false)
+
+  const filters = { search: search || undefined, active: active || undefined }
 
   const { data, isLoading } = useQuery({
-    queryKey: ['businesses', search, page],
+    queryKey: ['businesses', filters, page],
     queryFn: async () =>
-      (await api.get<Paginated<Business>>('/admin/businesses', { params: { search, page } })).data,
+      (await api.get<Paginated<Business>>('/admin/businesses', { params: { ...filters, page } }))
+        .data,
     placeholderData: keepPreviousData,
   })
+
+  const onExport = async () => {
+    setExporting(true)
+    try {
+      await downloadCsv('/admin/businesses/export', filters, `negocios_${today()}.csv`)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const del = useMutation({
     mutationFn: (id: number) => api.delete(`/admin/businesses/${id}`),
@@ -26,23 +43,48 @@ export default function Businesses() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Negocios</h1>
-        <Link
-          to="/negocios/nuevo"
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-        >
-          + Nuevo negocio
-        </Link>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" /> {exporting ? 'Exportando…' : 'Exportar CSV'}
+          </button>
+          <Link
+            to="/negocios/nuevo"
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            + Nuevo negocio
+          </Link>
+        </div>
       </div>
 
-      <input
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value)
-          setPage(1)
-        }}
-        placeholder="Buscar por nombre o folio…"
-        className="mb-4 w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-      />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
+          placeholder="Buscar por nombre o folio…"
+          className="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+        />
+        <select
+          value={active}
+          onChange={(e) => {
+            setActive(e.target.value as '' | '1' | '0')
+            setPage(1)
+          }}
+          aria-label="Filtrar por estado"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+        >
+          <option value="">Todos los estados</option>
+          <option value="1">Solo activos</option>
+          <option value="0">Solo inactivos</option>
+        </select>
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-left text-sm">

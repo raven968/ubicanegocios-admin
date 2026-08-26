@@ -9,3 +9,17 @@ body,
 body {
   margin: 0;
 }
+
+/* Impresión: la hoja de cobro sale sola, sin el layout del panel. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto;
+    background: #fff;
+  }
+}
