@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Printer } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Printer, UserMinus } from 'lucide-react'
 import api from '../lib/api'
 import { formatDate, money, today } from '../lib/cash'
 import type { DueCharge, DueChargesResponse } from '../lib/types'
@@ -10,11 +10,18 @@ import MovementForm from '../components/MovementForm'
 export default function HojaCobro() {
   const [date, setDate] = useState(today())
   const [charging, setCharging] = useState<DueCharge | null>(null)
+  const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['cash', 'due', date],
     queryFn: async () =>
       (await api.get<DueChargesResponse>('/admin/cash/due', { params: { date } })).data,
+  })
+
+  /** Da de baja el cobro: el cliente sale de la hoja hasta que se le registre uno nuevo. */
+  const dismiss = useMutation({
+    mutationFn: (businessId: number) => api.delete(`/admin/cash/due/${businessId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cash'] }),
   })
 
   return (
@@ -103,12 +110,30 @@ export default function HojaCobro() {
                     {money(charge.amount)}
                   </td>
                   <td className="py-2.5 print:hidden">
-                    <button
-                      onClick={() => setCharging(charge)}
-                      className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
-                    >
-                      Registrar cobro
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => setCharging(charge)}
+                        className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                      >
+                        Registrar cobro
+                      </button>
+                      <button
+                        title="Quitar de la hoja de cobro"
+                        disabled={dismiss.isPending}
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `¿Quitar a "${charge.business_name}" de los cobros? Se le deja de cobrar hasta que le registres un cobro nuevo. No se borra su historial.`,
+                            )
+                          ) {
+                            dismiss.mutate(charge.business_id)
+                          }
+                        }}
+                        className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-500 hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                      >
+                        <UserMinus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

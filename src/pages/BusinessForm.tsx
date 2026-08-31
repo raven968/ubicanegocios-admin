@@ -36,6 +36,8 @@ interface FormState {
   joined_at: string
   contact_name: string
   payment_day: string
+  payment_exempt: boolean
+  billing_notes: string
   category_ids: number[]
   subcategory_ids: number[]
   zone_ids: number[]
@@ -62,6 +64,8 @@ const empty: FormState = {
   joined_at: '',
   contact_name: '',
   payment_day: '',
+  payment_exempt: false,
+  billing_notes: '',
   category_ids: [],
   subcategory_ids: [],
   zone_ids: [],
@@ -117,6 +121,8 @@ export default function BusinessForm() {
         joined_at: b.joined_at ?? '',
         contact_name: b.contact_name ?? '',
         payment_day: b.payment_day ? String(b.payment_day) : '',
+        payment_exempt: b.payment_exempt ?? false,
+        billing_notes: b.billing_notes ?? '',
         category_ids: b.categories.map((c) => c.id),
         subcategory_ids: b.subcategories.map((s) => s.id),
         zone_ids: (b.zones ?? []).map((z) => z.id),
@@ -180,6 +186,8 @@ export default function BusinessForm() {
       joined_at: form.joined_at || null,
       contact_name: form.contact_name.trim() || null,
       payment_day: form.payment_day ? Number(form.payment_day) : null,
+      payment_exempt: form.payment_exempt,
+      billing_notes: form.billing_notes.trim() || null,
       category_ids: form.category_ids,
       subcategory_ids: form.subcategory_ids,
       zone_ids: form.zone_ids,
@@ -632,6 +640,42 @@ function BillingPanel({
             mes siguiente como próxima fecha de cobro.
           </p>
         </Field>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={form.payment_exempt}
+            onChange={(e) => setForm((f) => ({ ...f, payment_exempt: e.target.checked }))}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span className="text-sm">
+            <span className="font-medium text-gray-900">Exento de pago</span>
+            <span className="mt-0.5 block text-xs text-gray-500">
+              Por acuerdo no se le cobra (intercambio de publicidad, cortesía). Deja de aparecer en
+              la hoja de cobro mientras esté marcado.
+            </span>
+          </span>
+        </label>
+
+        <div className="mt-4">
+          <Field label="Notas de cobranza">
+            <textarea
+              rows={3}
+              value={form.billing_notes}
+              onChange={(e) => setForm((f) => ({ ...f, billing_notes: e.target.value }))}
+              placeholder={
+                form.payment_exempt
+                  ? 'Por qué está exento…'
+                  : 'Acuerdos, descuentos o cualquier detalle del cobro…'
+              }
+              maxLength={2000}
+              className="input"
+            />
+            <p className="mt-1 text-xs text-gray-500">Uso interno; nunca se muestra en el sitio.</p>
+          </Field>
+        </div>
       </div>
 
       {businessId ? (

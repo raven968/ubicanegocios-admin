@@ -89,7 +89,8 @@ export default function MovementForm({
       return suggested && untouched ? { ...merged, next_charge_date: suggested } : merged
     })
 
-  const isFee = form.type === 'income' && form.source === 'fee'
+  const isIncome = form.type === 'income'
+  const isFee = isIncome && form.source === 'fee'
   const total = (Number(form.quantity) || 0) * (Number(form.amount) || 0)
   const suggested = suggestNextCharge(form.occurred_at, form.business?.payment_day)
 
@@ -117,7 +118,7 @@ export default function MovementForm({
     save.mutate({
       type: form.type,
       source: isFee ? 'fee' : 'manual',
-      business_id: isFee ? form.business?.id ?? null : null,
+      business_id: isIncome ? form.business?.id ?? null : null,
       concept: form.concept.trim(),
       quantity: Number(form.quantity) || 0,
       amount: Number(form.amount) || 0,
@@ -209,9 +210,12 @@ export default function MovementForm({
           </div>
         )}
 
-        {isFee && (
+        {isIncome && (
           <div className="mb-4">
-            <span className={label}>Cliente</span>
+            <span className={label}>
+              Cliente{' '}
+              {!isFee && <span className="font-normal text-gray-400">(opcional)</span>}
+            </span>
             <BusinessPicker value={form.business} onChange={(b) => setAndSuggest({ business: b })} />
             {error('business_id')}
           </div>
@@ -291,7 +295,8 @@ export default function MovementForm({
           {isFee && (
             <div>
               <label className={label} htmlFor="next_charge_date">
-                Próxima fecha de cobro
+                Próxima fecha de cobro{' '}
+                <span className="font-normal text-gray-400">(opcional)</span>
               </label>
               <input
                 id="next_charge_date"
@@ -300,6 +305,11 @@ export default function MovementForm({
                 onChange={(e) => set('next_charge_date', e.target.value)}
                 className={field}
               />
+              {!form.next_charge_date && (
+                <p className="mt-1 text-xs text-amber-600">
+                  Sin fecha, este cliente no vuelve a aparecer en la hoja de cobro.
+                </p>
+              )}
               {suggested && suggested !== form.next_charge_date && (
                 <p className="mt-1 text-xs text-gray-500">
                   Día de pago {form.business?.payment_day}:{' '}

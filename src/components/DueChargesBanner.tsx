@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertCircle, Printer, X } from 'lucide-react'
+import { AlertCircle, Printer, UserMinus, X } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '../lib/api'
 import { money, formatDate, today, useDueCharges } from '../lib/cash'
 import type { DueCharge } from '../lib/types'
 import MovementForm from './MovementForm'
@@ -15,6 +17,13 @@ export default function DueChargesBanner() {
   const { data } = useDueCharges()
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === today())
   const [charging, setCharging] = useState<DueCharge | null>(null)
+  const qc = useQueryClient()
+
+  /** Da de baja el cobro: el cliente sale del aviso y de la hoja de cobro. */
+  const dismiss = useMutation({
+    mutationFn: (businessId: number) => api.delete(`/admin/cash/due/${businessId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cash'] }),
+  })
 
   const close = () => {
     localStorage.setItem(DISMISS_KEY, today())
@@ -67,6 +76,22 @@ export default function DueChargesBanner() {
                 className="shrink-0 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
               >
                 Cobrar
+              </button>
+              <button
+                title="Quitar de los cobros"
+                disabled={dismiss.isPending}
+                onClick={() => {
+                  if (
+                    confirm(
+                      `¿Quitar a "${charge.business_name}" de los cobros? Se le deja de cobrar hasta que le registres un cobro nuevo. No se borra su historial.`,
+                    )
+                  ) {
+                    dismiss.mutate(charge.business_id)
+                  }
+                }}
+                className="shrink-0 rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-500 hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+              >
+                <UserMinus className="h-3.5 w-3.5" />
               </button>
             </li>
           ))}

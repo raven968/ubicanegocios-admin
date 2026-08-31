@@ -79,6 +79,10 @@ export interface Business {
   contact_name: string | null
   /** Día del mes (1-31) en que toca cobrarle la cuota. */
   payment_day: number | null
+  /** Cliente que por acuerdo no paga; queda fuera de la hoja de cobro. */
+  payment_exempt: boolean
+  /** Motivo de la exención u otras notas de cobranza. Interno. */
+  billing_notes: string | null
   average_rating: number
   reviews_count: number
   images: BusinessImage[]

@@ -136,7 +136,7 @@ export default function Cobranza() {
           <input
             value={filters.search}
             onChange={(e) => setFilter('search', e.target.value)}
-            placeholder="Concepto o cliente…"
+            placeholder="Concepto, cliente o folio…"
             className={`${control} w-full`}
           />
         </div>
