@@ -202,3 +202,10 @@ export interface Paginated<T> {
   }
   links?: unknown
 }
+
+/** Conteos del catálogo para el dashboard; salen de la base, no de una página. */
+export interface BusinessStats {
+  total: number
+  active: number
+  inactive: number
+}

@@ -1,31 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import Stars from '../components/Stars'
-import type { Business, Paginated, Review } from '../lib/types'
+import type { BusinessStats, Paginated, Review } from '../lib/types'
 
 export default function Dashboard() {
-  const businesses = useQuery({
-    queryKey: ['businesses', 'count'],
-    queryFn: async () => (await api.get<Paginated<Business>>('/admin/businesses')).data,
+  const stats = useQuery({
+    queryKey: ['businesses', 'stats'],
+    queryFn: async () => (await api.get<BusinessStats>('/admin/businesses/stats')).data,
   })
   const reviews = useQuery({
     queryKey: ['reviews', 'recent'],
     queryFn: async () => (await api.get<Paginated<Review>>('/admin/reviews')).data,
   })
 
-  const totalBusinesses = businesses.data?.meta?.total ?? businesses.data?.data.length ?? 0
   const totalReviews = reviews.data?.meta?.total ?? reviews.data?.data.length ?? 0
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Dashboard</h1>
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Stat label="Negocios" value={totalBusinesses} />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <Stat label="Negocios" value={stats.data?.total} />
+        <Stat label="Activos" value={stats.data?.active} />
+        <Stat label="Inactivos" value={stats.data?.inactive} />
         <Stat label="Reseñas" value={totalReviews} />
-        <Stat
-          label="Inactivos"
-          value={businesses.data?.data.filter((b) => !b.active).length ?? 0}
-        />
       </div>
 
       <h2 className="mb-3 text-lg font-semibold text-gray-800">Reseñas recientes</h2>
@@ -48,11 +45,12 @@ export default function Dashboard() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+/** Mientras carga muestra un guion, para no dar por bueno un cero que aún no se sabe. */
+function Stat({ label, value }: { label: string; value: number | undefined }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="text-sm text-gray-500">{label}</div>
-      <div className="mt-1 text-3xl font-bold text-gray-900">{value}</div>
+      <div className="mt-1 text-3xl font-bold text-gray-900">{value ?? '—'}</div>
     </div>
   )
 }
