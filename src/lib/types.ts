@@ -1,4 +1,4 @@
-export type PlanSlug = 'fundador' | 'estrella' | 'pro' | 'destaca' | 'emprende' | 'lite'
+export type PlanSlug = 'fundador' | 'estrella' | 'pro' | 'destaca' | 'emprende' | 'lite' | 'ubitag'
 
 export interface PlanInfo {
   slug: PlanSlug
@@ -13,6 +13,7 @@ export const PLANS: PlanInfo[] = [
   { slug: 'destaca', name: 'Destaca', image: '/planes/destaca.png' },
   { slug: 'emprende', name: 'Emprende', image: '/planes/emprende.png' },
   { slug: 'lite', name: 'Ubica Lite', image: '/planes/lite.png' },
+  { slug: 'ubitag', name: 'UbiTag', image: '/planes/ubitag.png' },
 ]
 
 export interface Subcategory {
